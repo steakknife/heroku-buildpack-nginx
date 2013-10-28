@@ -34,6 +34,7 @@ pushd php-$PHP_VERSION
 echo "+ Configuring PHP..."
 # new configure command
 ## WARNING: libmcrypt needs to be installed.
+### See #33: checking for known struct flock definition... configure: error: Don't know how to define struct flock on this system, set --enable-opcache=no
 ./configure \
 --prefix=/app/vendor/php \
 --with-config-file-path=/app/vendor/php \
@@ -66,6 +67,7 @@ echo "+ Configuring PHP..."
 --with-pdo-pgsql \
 --with-png-dir \
 --with-freetype-dir=/app/local \
+--enable-opcache=no \
 --with-zlib
 
 echo "+ Compiling PHP..."

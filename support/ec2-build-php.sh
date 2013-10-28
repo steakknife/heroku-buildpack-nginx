@@ -6,7 +6,7 @@
 export S3_BUCKET="heroku-buildpack-php-tyler"
 export LIBMCRYPT_VERSION="2.5.9"
 export LIFREETYPE_VERSION="2.4.12"
-export PHP_VERSION="5.4.17"
+export PHP_VERSION="5.5.2"
 export APC_VERSION="3.1.10"
 export PHPREDIS_VERSION="2.2.2"
 export LIBMEMCACHED_VERSION="1.0.7"
@@ -79,6 +79,7 @@ pushd php-$PHP_VERSION
 echo "+ Configuring PHP..."
 # new configure command
 ## WARNING: libmcrypt needs to be installed.
+### See #33: checking for known struct flock definition... configure: error: Don't know how to define struct flock on this system, set --enable-opcache=no
 ./configure \
 --prefix=/app/vendor/php \
 --with-config-file-path=/app/vendor/php \
@@ -111,6 +112,7 @@ echo "+ Configuring PHP..."
 --with-pdo-pgsql \
 --with-png-dir \
 --with-freetype-dir=/app/local \
+--enable-opcache=no \
 --with-zlib
 
 echo "+ Compiling PHP..."
