@@ -143,7 +143,10 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
     --with-http_gzip_static_module \
     --with-http_geoip_module \
     --with-http_spdy_module 
-  make || die 'nginx build failed'
+  make || { 
+    cat config.log
+    die 'nginx build failed'
+  }
   rm -rf "${NGINX_INSTALL_DIR}"
   make install || die 'nginx install failed'
   popd >/dev/null
