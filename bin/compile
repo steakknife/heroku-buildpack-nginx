@@ -127,7 +127,7 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   tar xf "${NGINX_FILE}"
   pushd "${NGINX_DIR}" >/dev/null
   ./configure --prefix="${NGINX_INSTALL_DIR}" \
-    --with-cc-opt="-I${BUILD_DIR}/geoip/include" \
+    --with-cc-opt="-Xpreprocessor -I${BUILD_DIR}/geoip/include" \
     --with-ld-opt="-L${BUILD_DIR}/geoip/lib" \
     --conf-path="${NGINX_INSTALL_DIR}/conf" \
     --http-client-body-temp-path="/tmp/nginx/client_body_temp" \
