@@ -17,6 +17,9 @@ OPENSSL_VERSION=1.0.1e
 OPENSSL_MD5='66bf6f10f060d561929de96f9dfe5b8c'
 PCRE_VERSION=8.33
 PCRE_MD5='21514018448ac10062ece7a668fca949'
+GEOIP_CITY_MD5='fde6e82ee2411d67f2b9b03b75205dbd'
+GEOIP_COUNTRY_MD5='4a777a9e34480f0307b491e9de444554'
+GEOIP_MD5='05b7300435336231b556df5ab36f326d'
 # END CONFIG
 
 NGINX_FILE=nginx-$NGINX_VERSION.tar.gz
@@ -30,6 +33,16 @@ OPENSSL_DIR=openssl-$OPENSSL_VERSION
 PCRE_FILE=pcre-$PCRE_VERSION.tar.bz2
 PCRE_URL=http://downloads.sourceforge.net/project/pcre/pcre/$PCRE_VERSION/$PCRE_FILE
 PCRE_DIR=pcre-$PCRE_VERSION
+
+GEOIP_CITY_FILE=GeoLiteCity.dat.gz
+GEOIP_CITY_DAT=GeoLiteCity.dat
+GEOIP_CITY_URL=http://geolite.maxmind.com/download/geoip/database/$GEOIP_CITY_FILE
+GEOIP_COUNTRY_FILE=GeoIP.dat.gz
+GEOIP_COUNTRY_DAT=GeoIP.dat
+GEOIP_COUNTRY_URL=http://geolite.maxmind.com/download/geoip/database/GeoLiteCountry/$GEOIP_COUNTRY_URL
+GEOIP_FILE=GeoIP.tar.gz
+GEOIP_URL=http://geolite.maxmind.com/download/geoip/api/c/$GEOIP_FILE
+GEOIP_DIR=GeoIP-1.4.8
 
 #
 
@@ -65,7 +78,7 @@ NGINX_INSTALL_DIR="${BUILD_DIR}/vendor/nginx"
 # include .files when moving things around
 shopt -s dotglob
 
-mkdir -p $BUILD_DIR $CACHE_DIR ${BUILD_DIR}/local ${BUILD_DIR}/vendor/bin ${BUILD_DIR}/.profile.d
+mkdir -p $BUILD_DIR $CACHE_DIR ${BUILD_DIR}/.profile.d
 
 echo "-----> Installing Nginx"
 
@@ -83,12 +96,39 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   rm -rf "${OPENSSL_DIR}"
   tar xf "${OPENSSL_FILE}"
 
+  # Get GeoIP lib
+  mkdir -p "${BUILD_DIR}/vendor/nginx/geoip"
+
+  download "${GEOIP_URL}" "${GEOIP_FILE}" "${GEOIP_MD5}"
+  rm -rf "${GEOIP_DIR}"
+  tar xf "${GEOIP_FILE}"
+  pushd "${GEOIP_DIR}" >/dev/null
+  ./configure \
+    --prefix="${BUILD_DIR}/geoip" \
+    --sysconfdir='/app/vendor/nginx/geoip/etc' \
+    --datarootdir='/app/vendor/nginx/geoip/share' \
+    --enable-shared=NO \
+    --enable-static=YES \
+    --disable-dependency-tracking
+  make install
+  popd >/dev/null
+
+  download "${GEOIP_CITY_URL}" "${GEOIP_CITY_FILE}" "${GEOIP_CITY_MD5}"
+  gunzip "${GEOIP_CITY_FILE}"
+  cp "${GEOIP_CITY_DAT}" "${BUILD_DIR}/vendor/nginx/geoip"
+
+  download "${GEOIP_COUNTRY_URL}" "${GEOIP_COUNTRY_FILE}" "${GEOIP_COUNTRY_MD5}"
+  gunzip "${GEOIP_COUNTRY_FILE}"
+  cp "${GEOIP_COUNTRY_DAT}" "${BUILD_DIR}/vendor/nginx/geoip"
+
   # Build Nginx
   download "${NGINX_URL}" "${NGINX_FILE}" "${NGINX_MD5}"
   rm -rf "${CACHE_DIR}/build/nginx" "${NGINX_DIR}"
   tar xf "${NGINX_FILE}"
   pushd "${NGINX_DIR}" >/dev/null
   ./configure --prefix="${NGINX_INSTALL_DIR}" \
+    --with-cc-opt="-I${BUILD_DIR}/geoip/include" \
+    --with-ld-opt="-L${BUILD_DIR}/geoip/lib" \
     --conf-path="${NGINX_INSTALL_DIR}/conf" \
     --http-client-body-temp-path="/tmp/nginx/client_body_temp" \
     --http-proxy-temp-path="/tmp/nginx/proxy_temp" \
@@ -117,8 +157,6 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
 fi
 
 NGINX_INSTALLED_DIR=/app/vendor/nginx
-
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${BUILD_DIR}/local/lib"
 
 # Config files
 echo "-----> Copying config files"
