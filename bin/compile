@@ -46,7 +46,7 @@ function download_url() {
 }
 
 function check_md5() {
-  md5sum "$1" | grep -q "^$2 "
+  md5sum "$1" 2>/dev/null | grep -q "^$2 "
 }
 
 function download() {
@@ -89,8 +89,8 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   tar xf "${NGINX_FILE}"
   pushd "${NGINX_DIR}" >/dev/null
   ./configure --prefix="${NGINX_INSTALL_DIR}" \
-    --with-pcre="${PCRE_DIR}" \
-    --with-openssl="${OPENSSL_DIR}" \
+    --with-pcre="${CACHE_DIR}/${PCRE_DIR}" \
+    --with-openssl="${CACHE_DIR}/${OPENSSL_DIR}" \
     --with-openssl-opt='no-krb5 no-dso no-shared zlib' \
     --with-ipv6 \
     --with-http_ssl_module \
