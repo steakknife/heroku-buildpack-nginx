@@ -89,12 +89,21 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   tar xf "${NGINX_FILE}"
   pushd "${NGINX_DIR}" >/dev/null
   ./configure --prefix="${NGINX_INSTALL_DIR}" \
+    --conf-path="${NGINX_INSTALL_DIR}/conf" \
+    --http-client-body-temp-path="/tmp/nginx/client_body_temp" \
+    --http-proxy-temp-path="/tmp/nginx/proxy_temp" \
+    --http-fastcgi-temp-path="/tmp/nginx/fastcgi_temp" \
+    --http-uwsgi-temp-path="/tmp/nginx/uwsgi_temp" \
+    --http-scgi-temp-path="/tmp/nginx/scgi_temp" \
     --with-pcre="${CACHE_DIR}/${PCRE_DIR}" \
+    --with-pcre-opt='--enable-shared=NO --enable-jit --enable-utf --enable-pcregrep-libz --enable-pcregrep-libbz2 --enable-unicode-properties --disable-cpp --disable-dependency-tracking' \
     --with-openssl="${CACHE_DIR}/${OPENSSL_DIR}" \
     --with-openssl-opt='no-krb5 no-dso no-shared zlib' \
     --with-ipv6 \
     --with-http_ssl_module \
-    --with-http_gzip_static_module
+    --with-http_gzip_static_module \
+    --with-http_geoip_module \
+    --with-http_spdy_module 
   make || die 'nginx build failed'
   rm -rf "${NGINX_INSTALL_DIR}"
   make install || die 'nginx install failed'
@@ -106,6 +115,8 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   rm -rf "${NGINX_DIR}"
   popd >/dev/null
 fi
+
+NGINX_INSTALLED_DIR=/app/vendor/nginx
 
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${BUILD_DIR}/local/lib"
 
@@ -126,17 +137,13 @@ echo "Booting nginx"
 if [ -d /app/conf ]; then
   mkdir -p /app/conf/nginx.d
 
-  if [ -d /app/conf/etc.d ]; then
-    cp -f /app/conf/etc.d/* /app/vendor/php/etc.d/
-  fi
-
   if [ -r /app/conf/nginx.conf.erb ]; then
-    cp -f /app/conf/nginx.conf.erb ${NGINX_INSTALL_DIR}/conf/nginx.conf.erb
+    cp -f /app/conf/nginx.conf.erb ${NGINX_INSTALLED_DIR}/conf/nginx.conf.erb
   fi
 fi
 
 # Set correct port variable.
-erb ${NGINX_INSTALL_DIR}/conf/nginx.conf.erb > ${NGINX_INSTALL_DIR}/conf/nginx.conf
+erb ${NGINX_INSTALLED_DIR}/conf/nginx.conf.erb > ${NGINX_INSTALLED_DIR}/conf/nginx.conf
 
 if [ -d /app/conf/nginx.d ]; then
   # Parse .erb into .conf.
@@ -147,9 +154,9 @@ if [ -d /app/conf/nginx.d ]; then
   done
 fi
 
-mkdir -p ${NGINX_INSTALL_DIR}/logs
-touch ${NGINX_INSTALL_DIR}/logs/access.log ${NGINX_INSTALL_DIR}/logs/error.log
-mkdir -p client_body_temp fastcgi_temp proxy_temp scgi_temp uwsgi_temp
+mkdir -p ${NGINX_INSTALLED_DIR}/logs
+touch ${NGINX_INSTALLED_DIR}/logs/access.log ${NGINX_INSTALLED_DIR}/logs/error.log
+mkdir -p /tmp/nginx/{client_body_temp,fastcgi_temp,proxy_temp,scgi_temp,uwsgi_temp}
 (tail -f -n 0 ${NGINX_INSTALL_DIR}/logs/*.log &)
 
 EOF
