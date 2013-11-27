@@ -20,15 +20,15 @@ PCRE_MD5='21514018448ac10062ece7a668fca949'
 # END CONFIG
 
 NGINX_FILE=nginx-$NGINX_VERSION.tar.gz
-NGINX_SOURCE_URL=http://nginx.org/download/$NGINX_FILE
+NGINX_URL=http://nginx.org/download/$NGINX_FILE
 NGINX_DIR=nginx-$NGINX_VERSION
 
 OPENSSL_FILE=openssl-$OPENSSL_VERSION.tar.gz
-OPENSSL_SOURCE_URL=https://www.openssl.org/source/$OPENSSL_FILE
+OPENSSL_URL=https://www.openssl.org/source/$OPENSSL_FILE
 OPENSSL_DIR=openssl-$OPENSSL_VERSION
 
 PCRE_FILE=pcre-$PCRE_VERSION.tar.bz2
-PCRE_SOURCE_URL=http://downloads.sourceforge.net/project/pcre/pcre/$PCRE_VERSION/$PCRE_FILE
+PCRE_URL=http://downloads.sourceforge.net/project/pcre/pcre/$PCRE_VERSION/$PCRE_FILE
 PCRE_DIR=pcre-$PCRE_VERSION
 
 #
