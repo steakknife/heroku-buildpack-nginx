@@ -22,7 +22,6 @@ NGINX_FILE=nginx-$NGINX_VERSION.tar.gz
 NGINX_SOURCE_URL=http://nginx.org/download/$NGINX_FILE
 NGINX_DIR=nginx-$NGINX_VERSION
 
-
 OPENSSL_FILE=openssl-$OPENSSL_VERSION.tar.gz
 OPENSSL_SOURCE_URL=https://www.openssl.org/source/$OPENSSL_FILE
 OPENSSL_DIR=openssl-$OPENSSL_VERSION
