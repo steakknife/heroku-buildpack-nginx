@@ -22,6 +22,7 @@ NGINX_FILE=nginx-$NGINX_VERSION.tar.gz
 NGINX_SOURCE_URL=http://nginx.org/download/$NGINX_FILE
 NGINX_DIR=nginx-$NGINX_VERSION
 
+
 OPENSSL_FILE=openssl-$OPENSSL_VERSION.tar.gz
 OPENSSL_SOURCE_URL=https://www.openssl.org/source/$OPENSSL_FILE
 OPENSSL_DIR=openssl-$OPENSSL_VERSION
@@ -60,6 +61,7 @@ BIN_DIR=$(dirname $0)
 BUILD_DIR=$1
 CACHE_DIR=$2
 LP_DIR=`cd $(dirname $0); cd ..; pwd`
+NGINX_INSTALL_DIR="${BUILD_DIR}/vendor/nginx"
 
 # include .files when moving things around
 shopt -s dotglob
@@ -73,8 +75,8 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   pushd "${CACHE_DIR}" >/dev/null
   
   # PCRE (needed by nginx)
-  rm -rf "${CACHE_DIR}/build/pcre"
   download "${PCRE_URL}" "${PCRE_FILE}" "${PCRE_MD5}"
+  rm -rf "${CACHE_DIR}/build/pcre" "${PCRE_DIR}"
   tar xf "${PCRE_FILE}"
   pushd "${PCRE_DIR}" >/dev/null
   ./configure --prefix="${CACHE_DIR}/build/pcre" \
@@ -86,56 +88,44 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
     --enable-unicode-properties \
     --disable-cpp \
     --disable-dependency-tracking
-  make install  || {
-    rm -rf "${CACHE_DIR}/build/pcre"
-    die 'PCRE build failed'
-  }
+  make install || die 'PCRE build failed'
   popd >/dev/null
 
   # OpenSSL (needed by nginx because ubuntu's is OOOLD)
-  rm -rf "${CACHE_DIR}/build/openssl"
   download "${OPENSSL_URL}" "${OPENSSL_FILE}" "${OPENSSL_MD5}"
+  rm -rf "${CACHE_DIR}/build/openssl" "${OPENSSL_DIR}"
   tar xf "${OPENSSL_FILE}"
   pushd "${OPENSSL_DIR}" >/dev/null
   ./config --prefix="${CACHE_DIR}/build/openssl" no-krb5 no-dso no-shared zlib
-  make install || {
-    rm -rf "${CACHE_DIR}/build/openssl"
-    die 'OpenSSL build failed'
-  }
+  make install || die 'OpenSSL build failed'
   popd >/dev/null
 
-  rm -rf "${CACHE_DIR}/build/nginx"
   download "${NGINX_URL}" "${NGINX_FILE}" "${NGINX_MD5}"
+  rm -rf "${CACHE_DIR}/build/nginx" "${NGINX_DIR}"
   tar xf "${NGINX_FILE}"
   pushd "${NGINX_DIR}" >/dev/null
-  ./configure --prefix="${BUILD_DIR}" \
+  ./configure --prefix="${NGINX_INSTALL_DIR}" \
     --with-pcre="${CACHE_DIR}/build/pcre" \
     --with-ipv6 \
     --with-http_ssl_module \
     --with-http_gzip_static_module
-  make install || {
-    rm -rf "${CACHE_DIR}/build/nginx"
-    die 'nginx build failed'
-  }
+  make || die 'nginx build failed'
+  rm -rf "${NGINX_INSTALL_DIR}"
+  make install || die 'nginx install failed'
   popd >/dev/null
   
   # cleanup
-  rm -rf "${CACHE_DIR}/build/pcre"
-  rm -rf "${CACHE_DIR}/build/openssl"
-  rm -f "${NGINX_FILE}"
+  rm -rf "${CACHE_DIR}/build/pcre" "${PCRE_DIR}"
+  rm -rf "${CACHE_DIR}/build/openssl" "${OPENSSL_DIR}"
+  rm -rf "${CACHE_DIR}/build/nginx" "${NGINX_DIR}"
   popd >/dev/null
 fi
 
-mkdir -p ${BUILD_DIR}/vendor/nginx
-tar xzf ${NGINX_FILE} -C ${BUILD_DIR}/vendor/nginx
-
 export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${BUILD_DIR}/local/lib"
-
-
 
 # Config files
 echo "-----> Copying config files"
-cp $LP_DIR/conf/nginx.conf.erb ${BUILD_DIR}/vendor/nginx/conf/nginx.conf.erb
+cp $LP_DIR/conf/nginx.conf.erb ${NGINX_INSTALL_DIR}/conf/nginx.conf.erb
 cp -n ${LP_DIR}/.profile.d/* ${BUILD_DIR}/.profile.d/
 #erb $LP_DIR/conf/nginx.conf.erb > ${BUILD_DIR}/vendor/nginx/conf/nginx.conf
 
@@ -155,12 +145,12 @@ if [ -d /app/conf ]; then
   fi
 
   if [ -r /app/conf/nginx.conf.erb ]; then
-    cp -f /app/conf/nginx.conf.erb /app/vendor/nginx/conf/nginx.conf.erb
+    cp -f /app/conf/nginx.conf.erb ${NGINX_INSTALL_DIR}/conf/nginx.conf.erb
   fi
 fi
 
 # Set correct port variable.
-erb /app/vendor/nginx/conf/nginx.conf.erb > /app/vendor/nginx/conf/nginx.conf
+erb ${NGINX_INSTALL_DIR}/conf/nginx.conf.erb > ${NGINX_INSTALL_DIR}/conf/nginx.conf
 
 if [ -d /app/conf/nginx.d ]; then
   # Parse .erb into .conf.
@@ -171,8 +161,9 @@ if [ -d /app/conf/nginx.d ]; then
   done
 fi
 
-
-touch /app/vendor/nginx/logs/access.log /app/vendor/nginx/logs/error.log
+mkdir -p ${NGINX_INSTALL_DIR}/logs
+touch ${NGINX_INSTALL_DIR}/logs/access.log ${NGINX_INSTALL_DIR}/logs/error.log
 mkdir -p client_body_temp fastcgi_temp proxy_temp scgi_temp uwsgi_temp
-(tail -f -n 0 /app/vendor/nginx/logs/*.log &)
+(tail -f -n 0 ${NGINX_INSTALL_DIR}/logs/*.log &)
 
+EOF
