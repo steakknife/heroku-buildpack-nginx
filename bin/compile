@@ -2,6 +2,7 @@
 # Usage: bin/compile <build-dir> <cache-dir>
 
 set -e
+set -x
 set -o pipefail
 
 function die() {
@@ -41,8 +42,7 @@ function indent() {
 }
 
 function download_url() {
-  TARGET_URL="$1"
-  curl -s -S -O -L -m 300 --connect-timeout 60 "$TARGET_URL"
+  curl -s -S -O -L -m 300 --connect-timeout 60 "$1"
 }
 
 function check_md5() {
