@@ -161,6 +161,10 @@ NGINX_INSTALLED_DIR=/app/vendor/nginx
 
 # Config files
 echo "-----> Copying config files"
+ls ${NGINX_INSTALL_DIR}
+ls $CACHE_DIR
+ls $LP_DIR
+ls
 cp $LP_DIR/conf/nginx.conf.erb ${NGINX_INSTALL_DIR}/conf/nginx.conf.erb
 cp -n ${LP_DIR}/.profile.d/* ${BUILD_DIR}/.profile.d/
 #erb $LP_DIR/conf/nginx.conf.erb > ${BUILD_DIR}/vendor/nginx/conf/nginx.conf
