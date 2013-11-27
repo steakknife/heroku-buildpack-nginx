@@ -73,38 +73,25 @@ echo "-----> Installing Nginx"
 if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   pushd "${CACHE_DIR}" >/dev/null
   
-  # PCRE (needed by nginx)
+  # Get PCRE (needed by nginx)
   download "${PCRE_URL}" "${PCRE_FILE}" "${PCRE_MD5}"
-  rm -rf "${CACHE_DIR}/build/pcre" "${PCRE_DIR}"
+  rm -rf "${PCRE_DIR}"
   tar xf "${PCRE_FILE}"
-  pushd "${PCRE_DIR}" >/dev/null
-  ./configure --prefix="${CACHE_DIR}/build/pcre" \
-    --enable-shared=NO \
-    --enable-jit \
-    --enable-utf \
-    --enable-pcregrep-libz \
-    --enable-pcregrep-libbz2 \
-    --enable-unicode-properties \
-    --disable-cpp \
-    --disable-dependency-tracking
-  make install || die 'PCRE build failed'
-  popd >/dev/null
 
-  # OpenSSL (needed by nginx because ubuntu's is OOOLD)
+  # Get OpenSSL (needed by nginx because ubuntu's is OOOLD)
   download "${OPENSSL_URL}" "${OPENSSL_FILE}" "${OPENSSL_MD5}"
-  rm -rf "${CACHE_DIR}/build/openssl" "${OPENSSL_DIR}"
+  rm -rf "${OPENSSL_DIR}"
   tar xf "${OPENSSL_FILE}"
-  pushd "${OPENSSL_DIR}" >/dev/null
-  ./config --prefix="${CACHE_DIR}/build/openssl" no-krb5 no-dso no-shared zlib
-  make install || die 'OpenSSL build failed'
-  popd >/dev/null
 
+  # Build Nginx
   download "${NGINX_URL}" "${NGINX_FILE}" "${NGINX_MD5}"
   rm -rf "${CACHE_DIR}/build/nginx" "${NGINX_DIR}"
   tar xf "${NGINX_FILE}"
   pushd "${NGINX_DIR}" >/dev/null
   ./configure --prefix="${NGINX_INSTALL_DIR}" \
-    --with-pcre="${CACHE_DIR}/build/pcre" \
+    --with-pcre="${PCRE_DIR}" \
+    --with-openssl="${OPENSSL_DIR}" \
+    --with-openssl-opt='no-krb5 no-dso no-shared zlib' \
     --with-ipv6 \
     --with-http_ssl_module \
     --with-http_gzip_static_module
@@ -114,9 +101,9 @@ if [ ! -d "${CACHE_DIR}/build/nginx" ]; then
   popd >/dev/null
   
   # cleanup
-  rm -rf "${CACHE_DIR}/build/pcre" "${PCRE_DIR}"
-  rm -rf "${CACHE_DIR}/build/openssl" "${OPENSSL_DIR}"
-  rm -rf "${CACHE_DIR}/build/nginx" "${NGINX_DIR}"
+  rm -rf "${PCRE_DIR}"
+  rm -rf "${OPENSSL_DIR}"
+  rm -rf "${NGINX_DIR}"
   popd >/dev/null
 fi
 
